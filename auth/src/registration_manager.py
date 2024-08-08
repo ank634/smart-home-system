@@ -1,7 +1,7 @@
 '''Modules that help a user register to the application'''
 import hashlib
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Insert, insert, select
+from sqlalchemy import Insert, insert, select, exc
 
 
 class RegistrationManager:
@@ -36,9 +36,18 @@ class RegistrationManager:
         hashed_password: str = hashlib.sha256(str.encode(password)).hexdigest()
 
         # establish connection to database
-        with self.db_connector.engine.connect() as connection:
-            insertion_command: Insert = insert(self.users_table).values(
-                user_name=username, password=hashed_password)
-            connection.execute(insertion_command)  # execute the command
-            connection.commit()  # this must be added to every command that muatates data
-            return True
+        try:
+            with self.db_connector.engine.connect() as connection:
+                insertion_command: Insert = insert(self.users_table).values(
+                    user_name=username, password=hashed_password)
+                connection.execute(insertion_command)  # execute the command
+                connection.commit()  # this must be added to every command that muatates data
+                return True
+        
+        except exc.SQLAlchemyError as e:
+            connection.rollback()
+            raise e
+        
+        return False
+            
+            

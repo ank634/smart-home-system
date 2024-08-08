@@ -1,7 +1,7 @@
 '''Module to create sessions'''
 import uuid
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Insert, Delete, Select, delete, select, insert
+from sqlalchemy import Insert, Delete, Select, delete, select, insert, exc
 
 
 class SessionManager():
@@ -17,14 +17,18 @@ class SessionManager():
         existing_user_session: bool = self.session_exists(username=username)
 
         if not existing_user_session:
-            with self.db_connector.engine.connect() as connection:
-                new_session_id: str = self.create_session_id()
-                sql_command: Insert = insert(self.sessions_table).values(
-                    session_id=new_session_id, user_name=username)
-                connection.execute(sql_command)
-                connection.commit()
+            try:
+                with self.db_connector.engine.connect() as connection:
+                    new_session_id: str = self.create_session_id()
+                    sql_command: Insert = insert(self.sessions_table).values(
+                        session_id=new_session_id, user_name=username)
+                    connection.execute(sql_command)
+                    connection.commit()
+                    return new_session_id
 
-                return new_session_id
+            except exc.SQLAlchemyError as e:
+                connection.rollback()
+                raise e
 
         # session already exist for user so do not make a new one
         return None
@@ -51,12 +55,16 @@ class SessionManager():
         '''Delete current session. If it does not exist return
            false'''
         if self.session_exists(session_id=session_id):
-            with self.db_connector.engine.connect() as connection:
-                delete_command: Delete = delete(self.sessions_table).where(
-                    self.sessions_table.c.session_id == session_id)
-                result = connection.execute(delete_command)
-                connection.commit()
-                return result.rowcount > 0
+            try:
+                with self.db_connector.engine.connect() as connection:
+                    delete_command: Delete = delete(self.sessions_table).where(
+                        self.sessions_table.c.session_id == session_id)
+                    result = connection.execute(delete_command)
+                    connection.commit()
+                    return result.rowcount > 0
+
+            except exc.SQLAlchemyError:
+                connection.rollback()
 
         return False
 
