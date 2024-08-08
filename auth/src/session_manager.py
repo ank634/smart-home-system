@@ -29,6 +29,24 @@ class SessionManager():
         # session already exist for user so do not make a new one
         return None
 
+    def get_user_session_id(self, username: str) -> str | None:
+        '''Returns the session id associated with the given user
+           If the user does not have a current session active None is returned
+        '''
+        if self.session_exists(username=username):
+            with self.db_connector.engine.connect() as connection:
+                select_command = select(self.sessions_table.c.session_id).where(
+                    self.sessions_table.c.user_name == username)
+                result = connection.execute(select_command).fetchone()
+
+                if result is not None:
+                    return result[0]
+                else:
+                    return None
+
+        else:
+            return None
+
     def delete_session(self, session_id: str) -> bool:
         '''Delete current session. If it does not exist return
            false'''

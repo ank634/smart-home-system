@@ -32,25 +32,26 @@ class LoginManager:
 
     def login(self, username: str, password: str) -> str | None:
         '''Creates a new session token for user in session table if credentials are valid
-           if session token already exist user is not logged in
+           if session token already exist user is given the current session token
         '''
         hashed_password = hashlib.sha256(str.encode(password)).hexdigest()
-        # if the user name is valid and they are currently logged in
-        if not self.is_logged_in_username(username):
+
+        if self.user_exist(username=username):
             with self.db_connector.engine.connect() as connection:
                 query = select(self.users_table).where(
                     self.users_table.c.user_name == username).where(
                     self.users_table.c.password == hashed_password)  # building the query
 
                 result = connection.execute(query).fetchone()
-                if result is not None:
+                if result is not None and not self.is_logged_in_username(username=username):
                     session_created = self.session_manager.create_new_session(
                         username)
                     return session_created
+                elif result is not None and self.is_logged_in_username(username=username):
+                    return self.session_manager.get_user_session_id(username=username)
                 else:
                     return None
-        # could not log user in. Either they are already logged in or user does not exist
-        # maybe let the user log in anyway but log them out of exisiting sessions
+
         else:
             return None
 
