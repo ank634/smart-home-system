@@ -1,9 +1,8 @@
 '''Sets up the main flask application, database, and table objects'''
 from flask import Flask, jsonify
 from sqlalchemy import MetaData
-# TODO import this so I have to write auth.endpoints.bp since I plan to name endpoints for everything
-from auth.src import endpoints
 from db import init_db_connector, init_tables
+# TODO import this so I have to write auth.endpoints.bp since I plan to name endpoints for everything
 
 
 app: Flask = Flask(__name__)
@@ -15,7 +14,7 @@ tables = init_tables(app=app, meta_data=meta_data, db=db_connector)
 users_table = tables[0]
 sessions_table = tables[1]
 
-
+from auth.src import endpoints
 app.register_blueprint(endpoints.bp)
 
 # error handlers for global app
