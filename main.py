@@ -45,5 +45,11 @@ def bad_user_request(e):
     return jsonify(error=str(e)), 400
 
 
+@app.errorhandler(500)
+def internal_server_error(e):
+    '''error handler to return 500 errors in json instead of html'''
+    return jsonify(error=str(e)), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
