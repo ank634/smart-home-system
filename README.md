@@ -1,4 +1,8 @@
 # Smart Home System
+## Requirements
+Python version 3.9 or newer
+
+
 ## Installation
 Clone repo
 ```bash
