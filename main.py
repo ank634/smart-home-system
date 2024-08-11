@@ -2,12 +2,14 @@
 from flask import Flask, jsonify
 from sqlalchemy import MetaData
 from db import init_db_connector, init_tables
+import os
 # TODO import this so I have to write auth.endpoints.bp since I plan to name endpoints for everything
 
 
 app: Flask = Flask(__name__)
-# TODO figure out how to import db with local path
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////Users/emmanuelbastidas/Documents/Programming-Projects/smart-home-system/database.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
+print(DB_PATH)
+app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{DB_PATH}'
 db_connector = init_db_connector(app=app)
 meta_data = MetaData()
 tables = init_tables(app=app, meta_data=meta_data, db=db_connector)
@@ -49,6 +51,11 @@ def bad_user_request(e):
 def internal_server_error(e):
     '''error handler to return 500 errors in json instead of html'''
     return jsonify(error=str(e)), 500
+
+@app.errorhandler(415)
+def unsupported_media_type_error(e):
+    '''error handler to return 415 errors in json instead of html'''
+    return jsonify(error=str(e)), 415
 
 
 if __name__ == '__main__':
