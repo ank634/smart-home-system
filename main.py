@@ -1,8 +1,8 @@
 '''Sets up the main flask application, database, and table objects'''
+import os
 from flask import Flask, jsonify
 from sqlalchemy import MetaData
 from db import init_db_connector, init_tables
-import os
 # TODO import this so I have to write auth.endpoints.bp since I plan to name endpoints for everything
 
 
