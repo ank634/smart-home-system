@@ -1,13 +1,13 @@
 '''endpoints for authorization system'''
 from flask import Blueprint, abort, make_response, request, jsonify
-from auth.src.registration_manager import RegistrationManager
-from auth.src.login_manager import LoginManager
-from main import db_connector, users_table, sessions_table
+from src.auth.src.registration_manager import RegistrationManager
+from src.auth.src.login_manager import LoginManager
+from src.models import db_connector
 
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
-login_manager = LoginManager(db_connector, users_table, sessions_table)
-registration_manager = RegistrationManager(db_connector, users_table)
+login_manager = LoginManager(db_connector)
+registration_manager = RegistrationManager(db_connector)
 
 
 @bp.route('/login', methods=['POST'])
@@ -31,6 +31,7 @@ def login():
 
     if session_token is not None:
         response = make_response(jsonify(message='logged in'))
+        response.status_code = 201
         response.set_cookie('session-id', session_token)
         return response
 
@@ -52,6 +53,7 @@ def logout():
         if is_logged_out:
             response = make_response(jsonify(message='logged out'))
             response.set_cookie('session-id', '')
+            print(response)
             return response
 
     except Exception:
@@ -71,8 +73,8 @@ def register():
     if 'username' not in data or 'password' not in data:
         abort(400, description='must include username and password in json body')
 
-    username: str = data['username']
-    password: str = data['password']
+    username: str = data['username'].strip()
+    password: str = data['password'].strip()
 
     try:
         user_succesfully_registered = registration_manager.register_user(
@@ -81,9 +83,14 @@ def register():
         if user_succesfully_registered:
             response = make_response(
                 jsonify(message='user sucessfuly registered'))
+            response.status_code = 201
+            return response
+        else:
+            response = make_response(
+                jsonify(message='Could not register user, username Taken')
+            )
+            response.status_code = 400
             return response
 
     except Exception:
         abort(500, description='Registration failed due to an error on our end')
-
-    abort(404)
